@@ -33,10 +33,11 @@
 					</form>
 				</div>
 			</div>
+			
 			<div class="panel panel-success">
 				<div class="panel-heading">Your Stories</div>
 				<div class="panel-body" ng-repeat="each in stories | reverse">
-					<p> {{each.content}} </p>
+					<p> {{each.content}} --- Date : {{ each.created }}</p>
 
 				</div>
 

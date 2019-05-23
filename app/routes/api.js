@@ -1,12 +1,17 @@
 
 var User = require('../models/user');
 var Story = require('../models/story');
+var Friend = require('../models/friend');
 
 var config =  require('../../config');
 
 var secretKey = config.secretKey;
+
+var request = require('request');
+var url = 'https://api.openweathermap.org/data/2.5/weather?lat=39.792123&lon=30.506522&units=metric&appid=5c79122d65188a78c69598ad07c7c6ea'
  
 var jsonwebtoken = require('jsonwebtoken');
+
 
 function createToken(user){
 
@@ -39,6 +44,21 @@ module.exports = function(app, express , io) {
 			}
 			res.json(stories); 
 		});
+	});
+
+	api.get('/weather', function(req,res){
+		request(url , function(error , response , body){
+
+
+			weather_json =  JSON.parse(body);
+
+			weather = {
+				temperature : Math.round(weather_json.main.temp),
+				description : weather_json.weather[0].description,  
+			}
+		//	weather_data = {weather:weather};
+			res.send(weather);
+		})
 	});
 
 	api.post('/signup' ,  function(req,res){
@@ -96,7 +116,7 @@ module.exports = function(app, express , io) {
 			if(err) throw err; 
 
 			if(!user){
-				res.send({message : "User doesn't exist"}) ;
+				res.send({message : "User doesn't exist"});
 			}
 			else if(user){
 				var validPassword = user.comparePassword(req.body.password);
@@ -141,6 +161,7 @@ module.exports = function(app, express , io) {
 					res.status(403).send({success:false , message : "Failed to authecticate token user"});
 				}
 				else{
+					
 					req.decoded = decoded;
  
 					next();
@@ -158,13 +179,15 @@ module.exports = function(app, express , io) {
 
 		.post(function(req,res){
 
+			var datetime =  new Date();
+
 			var story = new Story({
 
 				creator :  req.decoded.id,
-				content :  req.body.content
+				content :  req.body.content,
+				created : datetime,
 			});
-
-			
+	
 			story.save(function(err , newStory){
 				if(err){
 					res.send(err);
@@ -177,11 +200,9 @@ module.exports = function(app, express , io) {
 
 			/*Story.create(req.body , function(err,stori){
 				if(err){
-					res.send(err);
-					
+					res.send(err);	
 				}
 				res.json(stori);
-
 			});*/
 			
 		})
@@ -198,6 +219,37 @@ module.exports = function(app, express , io) {
 				});
 			});
 
+		api.post('/recordfriend' , function(req,res){
+
+			var friend = new Friend({
+				creator: req.decoded.id,
+				description: req.body.description,
+				number : req.body.number,
+				email : req.body.email,	
+			});
+			friend.save(function(err,newFriend){
+				if(err){
+					res.send(err);
+					return;
+				}
+
+				res.json({
+					success : true,
+				});
+			});
+		});
+
+		api.post('/getfri' , function(req , res){
+			Friend.findOne({
+				description : req.body.description
+			}).select('number email').exec(function(err,friend){
+				if(err) throw err;
+				else{
+					res.send(friend);
+				}
+			})
+		})
+
 		api.get('/me' , function(req,res){
 
 			res.json(req.decoded);
@@ -207,6 +259,4 @@ module.exports = function(app, express , io) {
 
 
 	return api 
-
-
 }
