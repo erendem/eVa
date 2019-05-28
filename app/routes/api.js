@@ -219,6 +219,8 @@ module.exports = function(app, express , io) {
 				});
 			});
 
+
+
 		api.post('/recordfriend' , function(req,res){
 
 			var friend = new Friend({
@@ -236,6 +238,18 @@ module.exports = function(app, express , io) {
 				res.json({
 					success : true,
 				});
+			});
+		});
+
+		api.get('/af' , function(req , res) {
+			Friend.find({creator:req.decoded.id} , function(err , friends){
+
+		
+			   if(err){
+					res.send(err);
+					return;
+				}		
+			      res.json(friends);	
 			});
 		});
 
